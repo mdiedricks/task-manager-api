@@ -120,3 +120,31 @@ test("Should not update invalid user fields", async () => {
     .send({ pet: "Rex" })
     .expect(401);
 });
+
+
+test("Should reject an unsigned token", async () => {
+  const jwt = require("jsonwebtoken");
+  const token = jwt.sign({ _id: userOneId.toString() }, "", { algorithm: "none" });
+  await request(app)
+    .get("/users/me")
+    .set("Authorization", `Bearer ${token}`)
+    .expect(401);
+});
+
+test("Should reject an avatar above the upload limit", async () => {
+  await request(app)
+    .post("/users/me/avatar")
+    .set("Authorization", `Bearer ${userOne.tokens[0].token}`)
+    .attach("avatar", Buffer.alloc(1000001), "oversized.png")
+    .expect(400);
+  expect((await User.findById(userOneId)).avatar).toBeUndefined();
+});
+
+test("Should remove the user's tasks when deleting their account", async () => {
+  const Task = require("../src/models/task");
+  await request(app)
+    .delete("/users/me")
+    .set("Authorization", `Bearer ${userOne.tokens[0].token}`)
+    .expect(200);
+  expect(await Task.countDocuments({ owner: userOneId })).toBe(0);
+});
