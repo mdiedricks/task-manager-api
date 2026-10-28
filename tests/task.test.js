@@ -40,8 +40,8 @@ test("Should return all tasks for user one", async () => {
 });
 
 test("Should not allow user to delete another users task", async () => {
-  request(app)
-    .delete(`/task/${taskOne._id}`)
+  await request(app)
+    .delete(`/tasks/${taskOne._id}`)
     .set("Authorization", `Bearer ${userTwo.tokens[0].token}`)
     .send()
     .expect(404);
